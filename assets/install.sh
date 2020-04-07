@@ -102,12 +102,6 @@ EOF
   chmod 400 $(find /etc/opendkim/domainkeys -iname *.private)
 }
 
-#judgement
-if [[ -a /etc/supervisor/conf.d/supervisord.conf ]]; then
-  exec "$@" # for this moment is only exec, should remove this if at all
-  exit 0
-fi
-
 #supervisor
 cat > /etc/supervisor/conf.d/supervisord.conf <<EOF
 [supervisord]
