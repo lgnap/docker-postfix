@@ -13,8 +13,8 @@ RUN apt-get update
 RUN apt-get -y install supervisor postfix sasl2-bin opendkim opendkim-tools
 
 # Add files
-ADD assets/install.sh /opt/install.sh
+ADD entrypoint.sh /opt/entrypoint.sh
 
-ENTRYPOINT [ "/opt/install.sh" ]
+ENTRYPOINT [ "/opt/entrypoint.sh" ]
 # Run
 CMD /usr/bin/supervisord -c /etc/supervisor/supervisord.conf
