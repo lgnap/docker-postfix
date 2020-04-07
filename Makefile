@@ -1,4 +1,7 @@
 
+build:
+	docker-compose build
+
 run-ps:
 	docker-compose up postfix
 
