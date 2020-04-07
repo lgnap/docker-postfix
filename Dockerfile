@@ -1,5 +1,6 @@
-From ubuntu:trusty
-MAINTAINER Elliott Ye
+FROM ubuntu:trusty
+
+LABEL MAINTAINER="lgnap"
 
 # Set noninteractive mode for apt-get
 ENV DEBIAN_FRONTEND noninteractive
