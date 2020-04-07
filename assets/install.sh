@@ -40,7 +40,7 @@ EOF
 
 opendkim () {
   if [[ -z "$(find /etc/opendkim/domainkeys -iname *.private)" ]]; then
-    exit 0
+    return
   fi
   cat >> /etc/supervisor/conf.d/supervisord.conf <<EOF
     [program:opendkim]
