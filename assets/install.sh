@@ -103,6 +103,7 @@ EOF
 
 #judgement
 if [[ -a /etc/supervisor/conf.d/supervisord.conf ]]; then
+  exec "$@" # for this moment is only exec, should remove this if at all
   exit 0
 fi
 
@@ -146,3 +147,5 @@ enable_tls
 #  opendkim
 #############
 opendkim
+
+exec "$@"
