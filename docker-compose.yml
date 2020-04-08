@@ -17,8 +17,7 @@ services:
     volumes:
       - './domainkeys:/etc/opendkim/domainkeys'
     environment:
-      - maildomain=${MAILDOMAIN}
-      - selector=${SELECTOR}
+      - OPENDKIM_DOMAINS=${OPENDKIM_DOMAINS}
 
   swaks:
     image: flowman/swaks

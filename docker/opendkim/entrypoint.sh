@@ -2,30 +2,47 @@
 
 DIRECTORY_DOMAIN_KEYS=/etc/opendkim/domainkeys
 
-if [[ -z "$(find ${DIRECTORY_DOMAIN_KEYS} -iname "*.private")" ]]; then
-  opendkim-genkey --directory="${DIRECTORY_DOMAIN_KEYS}" --domain="${maildomain}" --selector="${selector}"
-fi
-
   cat > /etc/opendkim/TrustedHosts <<EOF
 127.0.0.1
 localhost
 192.168.0.1/24
 172.0.0.0/8
 
-*.$maildomain
 EOF
 
-domainkeys=$(find ${DIRECTORY_DOMAIN_KEYS} -iname "*.private")
+  rm -f /etc/opendkim/KeyTable
+  rm -f /etc/opendkim/SigningTable
 
-  cat > /etc/opendkim/KeyTable <<EOF
-${selector}._domainkey.$maildomain $maildomain:${selector}:${domainkeys}
-EOF
+  echo "DNS records:"
+  for d in $OPENDKIM_DOMAINS ; do
+    domain=$(echo "$d"| cut -f1 -d '=')
+    selector=$(expr match "$d" '.*\=\(.*\)')
+    if [ -z "$selector" ] ; then
+      selector="mail"
+    fi
 
-  cat > /etc/opendkim/SigningTable <<EOF
-*@$maildomain ${selector}._domainkey.$maildomain
-EOF
+    echo "*.$domain" >> /etc/opendkim/TrustedHosts
 
-  chown opendkim:opendkim ${domainkeys} ${DIRECTORY_DOMAIN_KEYS}
-  chmod 400 ${domainkeys}
+    domainDir="${DIRECTORY_DOMAIN_KEYS}/$domain"
+    privateFile="$domainDir/$selector.private"
+    txtFile="$domainDir/$selector.txt"
+    if [ ! -f "$privateFile" ] ; then
+      echo "No DKIM private key found for selector '$selector' in domain '$domain'. Generating one now..."
+      mkdir -p "$domainDir"
+      opendkim-genkey -D "$domainDir" --selector="$selector" --domain="$domain" --append-domain
+    fi
+
+    # Ensure strict permissions required by opendkim
+    chown opendkim:opendkim "$domainDir" "$privateFile"
+    chmod a=,u=rw "$privateFile"
+
+    echo "$selector._domainkey.$domain $domain:$selector:$privateFile" >> /etc/opendkim/KeyTable
+    echo "*@$domain $selector._domainkey.$domain" >> /etc/opendkim/SigningTable
+
+    cat "$txtFile"
+  done
+
+  chown opendkim:opendkim ${DIRECTORY_DOMAIN_KEYS}
+
 
 exec "$@"
