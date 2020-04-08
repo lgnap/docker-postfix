@@ -11,9 +11,13 @@ RUN apt-get update && apt-get -y install \
 	opendkim-tools \
 	&& rm -rf /var/lib/apt/lists/*
 
+COPY opendkim.conf /etc/opendkim.conf
+COPY default_opendkim /etc/default/opendkim
+
 # Add files
 ADD entrypoint.sh /opt/entrypoint.sh
 
 ENTRYPOINT [ "/opt/entrypoint.sh" ]
-# Run
-CMD ["/usr/sbin/opendkim", "-f", "-x", "/etc/opendkim.conf" ]
+
+# Run (config file loaded auto, foreground & socket in config file)
+CMD ["/usr/sbin/opendkim"]
