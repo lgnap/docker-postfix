@@ -13,6 +13,8 @@ RUN apt-get update && apt-get -y install \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Add files
+ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+ADD postfix.sh /opt/postfix.sh
 ADD entrypoint.sh /opt/entrypoint.sh
 
 ENTRYPOINT [ "/opt/entrypoint.sh" ]
