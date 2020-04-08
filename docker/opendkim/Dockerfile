@@ -14,6 +14,7 @@ RUN apt-get update && apt-get -y install \
 
 COPY opendkim.conf /etc/opendkim.conf
 COPY default_opendkim /etc/default/opendkim
+COPY TrustedHosts /etc/opendkim/TrustedHosts
 
 # Add files
 ADD supervisord.conf /etc/supervisor/conf.d/supervisord.conf

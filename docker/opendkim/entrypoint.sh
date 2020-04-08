@@ -2,47 +2,37 @@
 
 DIRECTORY_DOMAIN_KEYS=/etc/opendkim/domainkeys
 
-  cat > /etc/opendkim/TrustedHosts <<EOF
-127.0.0.1
-localhost
-192.168.0.1/24
-172.0.0.0/8
+rm -f /etc/opendkim/KeyTable
+rm -f /etc/opendkim/SigningTable
 
-EOF
+echo "DNS records:"
+for d in $OPENDKIM_DOMAINS ; do
+  domain=$(echo "$d"| cut -f1 -d '=')
+  selector=$(expr match "$d" '.*\=\(.*\)')
+  if [ -z "$selector" ] ; then
+    selector="mail"
+  fi
 
-  rm -f /etc/opendkim/KeyTable
-  rm -f /etc/opendkim/SigningTable
+  domainDir="${DIRECTORY_DOMAIN_KEYS}/$domain"
+  privateFile="$domainDir/$selector.private"
+  txtFile="$domainDir/$selector.txt"
+  if [ ! -f "$privateFile" ] ; then
+    echo "No DKIM private key found for selector '$selector' in domain '$domain'. Generating one now..."
+    mkdir -p "$domainDir"
+    opendkim-genkey -D "$domainDir" --selector="$selector" --domain="$domain" --append-domain
+  fi
 
-  echo "DNS records:"
-  for d in $OPENDKIM_DOMAINS ; do
-    domain=$(echo "$d"| cut -f1 -d '=')
-    selector=$(expr match "$d" '.*\=\(.*\)')
-    if [ -z "$selector" ] ; then
-      selector="mail"
-    fi
+  # Ensure strict permissions required by opendkim
+  chown opendkim:opendkim "$domainDir" "$privateFile"
+  chmod a=,u=rw "$privateFile"
 
-    echo "*.$domain" >> /etc/opendkim/TrustedHosts
+  echo "$selector._domainkey.$domain $domain:$selector:$privateFile" >> /etc/opendkim/KeyTable
+  echo "*@$domain $selector._domainkey.$domain" >> /etc/opendkim/SigningTable
 
-    domainDir="${DIRECTORY_DOMAIN_KEYS}/$domain"
-    privateFile="$domainDir/$selector.private"
-    txtFile="$domainDir/$selector.txt"
-    if [ ! -f "$privateFile" ] ; then
-      echo "No DKIM private key found for selector '$selector' in domain '$domain'. Generating one now..."
-      mkdir -p "$domainDir"
-      opendkim-genkey -D "$domainDir" --selector="$selector" --domain="$domain" --append-domain
-    fi
+  cat "$txtFile"
+done
 
-    # Ensure strict permissions required by opendkim
-    chown opendkim:opendkim "$domainDir" "$privateFile"
-    chmod a=,u=rw "$privateFile"
-
-    echo "$selector._domainkey.$domain $domain:$selector:$privateFile" >> /etc/opendkim/KeyTable
-    echo "*@$domain $selector._domainkey.$domain" >> /etc/opendkim/SigningTable
-
-    cat "$txtFile"
-  done
-
-  chown opendkim:opendkim ${DIRECTORY_DOMAIN_KEYS}
+chown opendkim:opendkim ${DIRECTORY_DOMAIN_KEYS}
 
 
 exec "$@"
