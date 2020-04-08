@@ -1,0 +1,30 @@
+version: '2.4'
+
+# this is a "unit test" of Dockerfile/entrypoint created here
+
+services:
+  postfix:
+    build: docker/postfix
+    volumes:
+      - './certs:/etc/postfix/certs'
+    environment:
+      - maildomain=${MAILDOMAIN}
+      - smtp_user=${SMTP_USER}:${SMTP_PASSWORD}
+      #auth sasl
+
+  odkim:
+    build: docker/opendkim
+    volumes:
+      - './domainkeys:/etc/opendkim/domainkeys'
+    environment:
+      - maildomain=${MAILDOMAIN}
+
+  swaks:
+    image: flowman/swaks
+    command: --from from@${MAILDOMAIN} --to ${MAILTESTER_EMAIL} --server postfix --port 587 --tls --auth --auth-user ${SMTP_USER} --auth-password ${SMTP_PASSWORD}
+
+# how to create cert & key in right folder:
+# openssl req -x509 -newkey rsa:4096 --nodes -keyout nameDoesntMatter.key -out nameDoesntMatter.crt -days 365
+
+# domainkeys generated through (will be done by entrypoint)
+# opendkim-genkey --directory="domainkeys" --domain="${MAILDOMAIN}" --selector="20200407"
