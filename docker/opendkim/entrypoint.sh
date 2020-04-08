@@ -1,8 +1,9 @@
 #!/bin/bash
 
-if [[ -z "$(find /etc/opendkim/domainkeys -iname *.private)" ]]; then
-  echo "opendkim ep: dont find keys to use in KeyTable & SigningTable -> STOP" >&2
-  exit 1
+DIRECTORY_DOMAIN_KEYS=/etc/opendkim/domainkeys
+
+if [[ -z "$(find ${DIRECTORY_DOMAIN_KEYS} -iname "*.private")" ]]; then
+  opendkim-genkey --directory="${DIRECTORY_DOMAIN_KEYS}" --domain="${maildomain}" --selector="${selector}"
 fi
 
   cat > /etc/opendkim/TrustedHosts <<EOF
@@ -14,15 +15,17 @@ localhost
 *.$maildomain
 EOF
 
+domainkeys=$(find ${DIRECTORY_DOMAIN_KEYS} -iname "*.private")
+
   cat > /etc/opendkim/KeyTable <<EOF
-mail._domainkey.$maildomain $maildomain:mail:$(find /etc/opendkim/domainkeys -iname *.private)
+${selector}._domainkey.$maildomain $maildomain:${selector}:${domainkeys}
 EOF
 
   cat > /etc/opendkim/SigningTable <<EOF
-*@$maildomain mail._domainkey.$maildomain
+*@$maildomain ${selector}._domainkey.$maildomain
 EOF
 
-  chown opendkim:opendkim $(find /etc/opendkim/domainkeys -iname *.private)
-  chmod 400 $(find /etc/opendkim/domainkeys -iname *.private)
+  chown opendkim:opendkim ${domainkeys} ${DIRECTORY_DOMAIN_KEYS}
+  chmod 400 ${domainkeys}
 
 exec "$@"
